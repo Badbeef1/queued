@@ -16,7 +16,9 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@queued/server": ["../server/src/index.ts"],
+      "@queued/server/*": ["../server/src/*"]
     }
   },
   "include": ["src"]

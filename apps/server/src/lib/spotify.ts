@@ -1,12 +1,14 @@
 import { getSession, updateSession, type SpotifySession } from './sessions'
 
+declare const process: { env: Record<string, string | undefined> }
+
 const SPOTIFY_API = 'https://api.spotify.com/v1'
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 
 async function refreshAccessToken(session: SpotifySession): Promise<SpotifySession> {
-  const clientId = process.env.SPOTIFY_CLIENT_ID!
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET!
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+  const clientId = process.env['SPOTIFY_CLIENT_ID']!
+  const clientSecret = process.env['SPOTIFY_CLIENT_SECRET']!
+  const credentials = btoa(`${clientId}:${clientSecret}`)
 
   const res = await fetch(SPOTIFY_TOKEN_URL, {
     method: 'POST',
@@ -125,10 +127,10 @@ export async function getDevices(sessionId: string) {
 }
 
 export async function exchangeCodeForTokens(code: string) {
-  const clientId = process.env.SPOTIFY_CLIENT_ID!
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET!
-  const redirectUri = process.env.SPOTIFY_REDIRECT_URI!
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+  const clientId = process.env['SPOTIFY_CLIENT_ID']!
+  const clientSecret = process.env['SPOTIFY_CLIENT_SECRET']!
+  const redirectUri = process.env['SPOTIFY_REDIRECT_URI']!
+  const credentials = btoa(`${clientId}:${clientSecret}`)
 
   const res = await fetch(SPOTIFY_TOKEN_URL, {
     method: 'POST',
