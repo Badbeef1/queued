@@ -9,6 +9,7 @@ import {
   getQueue,
   getDevices,
 } from '../../lib/spotify'
+import { broadcastRefresh } from '../../lib/broadcaster'
 
 function requireSession(sessionId: string) {
   const session = getSession(sessionId)
@@ -34,6 +35,7 @@ export const spotifyRouter = router({
       const session = requireSession(input.sessionId)
       try {
         await queueTrack(input.sessionId, input.trackUri, session.deviceId)
+        void broadcastRefresh(input.sessionId)
         return { success: true }
       } catch (err) {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })

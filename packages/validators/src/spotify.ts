@@ -46,3 +46,10 @@ export const SetDeviceSchema = z.object({
   sessionId: z.string(),
   deviceId: z.string(),
 })
+
+export const SessionStateSchema = z.object({
+  nowPlaying: NowPlayingSchema,
+  queue: z.array(TrackSchema),
+})
+
+export type SessionState = z.infer<typeof SessionStateSchema>

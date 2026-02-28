@@ -5,6 +5,7 @@ import { appRouter } from './trpc'
 import { createContext } from './trpc/context'
 import { createSession, getSession } from './lib/sessions'
 import { exchangeCodeForTokens } from './lib/spotify'
+import { registerClient } from './lib/broadcaster'
 
 // Pending OAuth sessions: state -> { name, hostName }
 const pendingOAuth = new Map<string, { name: string; hostName: string }>()
@@ -102,6 +103,32 @@ app.get('/auth/callback', async (c) => {
     console.error('OAuth callback error:', err)
     return c.redirect(`${appUrl}?error=token_exchange_failed`)
   }
+})
+
+// SSE: push session state to connected browsers
+app.get('/events/:sessionId', (c) => {
+  const sessionId = c.req.param('sessionId')
+  if (!getSession(sessionId)) return c.json({ error: 'Session not found' }, 404)
+
+  let cleanup: (() => void) | null = null
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      cleanup = registerClient(sessionId, controller)
+    },
+    cancel() {
+      cleanup?.()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  })
 })
 
 const port = parseInt(process.env.PORT ?? '4000')

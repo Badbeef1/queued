@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
@@ -10,15 +10,23 @@ interface SearchBarProps {
 export function SearchBar({ onSearch, placeholder = 'Search songs...' }: SearchBarProps) {
   const [value, setValue] = useState('')
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onSearch(value)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [value, onSearch])
+  const handleSubmit = () => {
+    if (value.trim()) onSearch(value.trim())
+  }
+
+  const handleClear = () => {
+    setValue('')
+    onSearch('')
+  }
 
   return (
-    <div className="relative">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleSubmit()
+      }}
+      className="relative"
+    >
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         value={value}
@@ -29,12 +37,12 @@ export function SearchBar({ onSearch, placeholder = 'Search songs...' }: SearchB
       {value && (
         <button
           type="button"
-          onClick={() => setValue('')}
+          onClick={handleClear}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
       )}
-    </div>
+    </form>
   )
 }
