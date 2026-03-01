@@ -114,7 +114,7 @@ function SessionPage() {
       {/* Search */}
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Add to Queue</h2>
-        <SearchBar onSearch={handleSearch} placeholder="Search for a song..." />
+        <SearchBar onSearch={handleSearch} placeholder="Search for a song..." isLoading={searchQuery_.isLoading} />
         {searchQuery.length > 2 && (
           <SearchResults
             tracks={searchResults}
