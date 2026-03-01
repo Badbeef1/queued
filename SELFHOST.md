@@ -47,9 +47,9 @@ The server is never exposed directly.
 2. Create a new app (any name)
 3. Under **Redirect URIs**, add:
    ```
-   http://YOUR_HOST_IP:3000/auth/callback
+   http://YOUR_HOST_IP:WEB_PORT/auth/callback
    ```
-   Replace `YOUR_HOST_IP` with the LAN IP of the machine running Docker (e.g. `192.168.1.42`).
+   Replace `YOUR_HOST_IP` with the LAN IP of the machine running Docker (e.g. `192.168.1.42`) and `WEB_PORT` with the port you'll use (default: `3000`).
 4. Save your **Client ID** and **Client Secret**
 
 ---
@@ -66,13 +66,13 @@ Edit `.env`:
 SPOTIFY_CLIENT_ID=your_client_id_here
 SPOTIFY_CLIENT_SECRET=your_client_secret_here
 
-# Same IP and port for all three — nginx handles everything on one port
+# All three must use the SAME port as WEB_PORT — nginx handles everything on one port
 SPOTIFY_REDIRECT_URI=http://192.168.1.42:3000/auth/callback
 APP_URL=http://192.168.1.42:3000
 CORS_ORIGIN=http://192.168.1.42:3000
 
 PORT=4000
-WEB_PORT=3000
+WEB_PORT=3000  # if you change this, update the three URLs above to match
 ```
 
 > **Tip**: find your LAN IP with `ipconfig getifaddr en0` (macOS) or `hostname -I` (Linux).
@@ -105,11 +105,11 @@ Open `http://YOUR_HOST_IP:3000` in your browser.
 |----------|-------------|
 | `SPOTIFY_CLIENT_ID` | From Spotify Developer Dashboard |
 | `SPOTIFY_CLIENT_SECRET` | From Spotify Developer Dashboard |
-| `SPOTIFY_REDIRECT_URI` | Must match what you registered in Spotify — `http://HOST_IP:3000/auth/callback` |
-| `APP_URL` | Public URL of the web app — `http://HOST_IP:3000` |
+| `SPOTIFY_REDIRECT_URI` | Must match what you registered in Spotify — `http://HOST_IP:WEB_PORT/auth/callback` |
+| `APP_URL` | Public URL of the web app — `http://HOST_IP:WEB_PORT` |
 | `CORS_ORIGIN` | Same as `APP_URL` |
 | `PORT` | Internal server port (default: `4000`, don't change) |
-| `WEB_PORT` | Host port for the web container (default: `3000`) |
+| `WEB_PORT` | Host port for the web container (default: `3000`) — **must match the port in the three URLs above** |
 
 ---
 

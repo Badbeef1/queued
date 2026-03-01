@@ -1,7 +1,7 @@
 services:
   # Hono + tRPC API server (internal only — nginx proxies to it)
   server:
-    image: smalboeuf1/queued-server:latest
+    image: smalboeuf1/queued-server:v0.1.0
     container_name: queued-server
     restart: unless-stopped
     env_file:
@@ -20,7 +20,7 @@ services:
 
   # React SPA served by nginx — also proxies /trpc, /events, /auth to server
   web:
-    image: smalboeuf1/queued-web:latest
+    image: smalboeuf1/queued-web:v0.1.0
     container_name: queued-web
     restart: unless-stopped
     ports:

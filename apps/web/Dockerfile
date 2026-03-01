@@ -7,8 +7,14 @@ FROM base AS build
 ARG VITE_SERVER_URL=
 ENV VITE_SERVER_URL=$VITE_SERVER_URL
 
+# Copy manifests first so dependency install is cached independently from source changes
+COPY bun.lock package.json ./
+COPY apps/web/package.json apps/web/
+COPY apps/server/package.json apps/server/
+COPY packages/validators/package.json packages/validators/
+RUN bun install --frozen-lockfile
+
 COPY . .
-RUN bun install
 RUN bun run --filter @queued/web build
 
 # Production stage — static files served by nginx, API proxied to server container

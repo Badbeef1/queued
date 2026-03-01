@@ -3,8 +3,15 @@ WORKDIR /app
 
 # Build stage - full monorepo context for workspace resolution
 FROM base AS build
+
+# Copy manifests first so dependency install is cached independently from source changes
+COPY bun.lock package.json ./
+COPY apps/server/package.json apps/server/
+COPY apps/web/package.json apps/web/
+COPY packages/validators/package.json packages/validators/
+RUN bun install --frozen-lockfile
+
 COPY . .
-RUN bun install
 
 # Runtime stage - only what's needed to run the server
 FROM oven/bun:1 AS release
