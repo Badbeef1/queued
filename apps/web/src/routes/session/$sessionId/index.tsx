@@ -23,7 +23,7 @@ function SessionPage() {
 
   const sessionQuery = trpc.session.get.useQuery({ id: sessionId })
 
-  const { nowPlaying, queue } = useSessionStream(sessionId)
+  const { nowPlaying, queue, addOptimisticTrack } = useSessionStream(sessionId)
 
   const searchQuery_ = trpc.spotify.search.useQuery(
     { sessionId, query: searchQuery },
@@ -56,9 +56,10 @@ function SessionPage() {
   const handleQueue = useCallback(
     (track: Track) => {
       setQueuingUri(track.uri)
+      addOptimisticTrack(track)
       queueMutation.mutate({ sessionId, trackUri: track.uri })
     },
-    [sessionId, queueMutation],
+    [sessionId, queueMutation, addOptimisticTrack],
   )
 
   const handleSearch = useCallback((q: string) => {

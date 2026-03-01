@@ -7,6 +7,7 @@ export function useSessionStream(sessionId: string): {
   nowPlaying: NowPlaying | null
   queue: Track[]
   connected: boolean
+  addOptimisticTrack: (track: Track) => void
 } {
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null)
   const [queue, setQueue] = useState<Track[]>([])
@@ -33,5 +34,9 @@ export function useSessionStream(sessionId: string): {
     }
   }, [sessionId])
 
-  return { nowPlaying, queue, connected }
+  const addOptimisticTrack = (track: Track) => {
+    setQueue((prev) => [...prev, track])
+  }
+
+  return { nowPlaying, queue, connected, addOptimisticTrack }
 }
