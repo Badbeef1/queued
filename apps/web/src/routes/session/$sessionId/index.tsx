@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useCallback } from 'react'
-import { Settings } from 'lucide-react'
+import { Settings, Columns2, Rows2 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { toast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ function SessionPage() {
   const { sessionId } = Route.useParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [queuingUri, setQueuingUri] = useState<string | undefined>()
+  const [layoutMode, setLayoutMode] = useState<'split' | 'stack'>('split')
 
   const sessionQuery = trpc.session.get.useQuery({ id: sessionId })
 
@@ -84,6 +85,39 @@ function SessionPage() {
   const session = sessionQuery.data
   const searchResults = (searchQuery_.data ?? []) as Track[]
 
+  const nowPlayingSection = (
+    <section className="space-y-2">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Now Playing</h2>
+      <NowPlaying
+        isPlaying={nowPlaying?.isPlaying ?? false}
+        track={(nowPlaying?.track as Track) ?? null}
+        progressMs={nowPlaying?.progressMs ?? null}
+      />
+    </section>
+  )
+
+  const searchSection = (
+    <section className="space-y-3">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Add to Queue</h2>
+      <SearchBar onSearch={handleSearch} placeholder="Search for a song..." isLoading={searchQuery_.isLoading} />
+      {searchQuery.length > 2 && (
+        <SearchResults
+          tracks={searchResults}
+          isLoading={searchQuery_.isLoading}
+          onQueue={handleQueue}
+          queuingUri={queuingUri}
+        />
+      )}
+    </section>
+  )
+
+  const queueSection = (
+    <section className="space-y-2">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Up Next</h2>
+      <QueueList tracks={queue} />
+    </section>
+  )
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -92,46 +126,58 @@ function SessionPage() {
           <h1 className="text-xl font-bold">{session.name}</h1>
           <p className="text-sm text-muted-foreground">Hosted by {session.hostName}</p>
         </div>
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/session/$sessionId/setup" params={{ sessionId }}>
-            <Settings className="h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          <div className="hidden md:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLayoutMode(layoutMode === 'split' ? 'stack' : 'split')}
+              title={layoutMode === 'split' ? 'Switch to single column' : 'Switch to two columns'}
+            >
+              {layoutMode === 'split' ? <Rows2 className="h-4 w-4" /> : <Columns2 className="h-4 w-4" />}
+            </Button>
+          </div>
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/session/$sessionId/setup" params={{ sessionId }}>
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Now Playing */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Now Playing</h2>
-        <NowPlaying
-          isPlaying={nowPlaying?.isPlaying ?? false}
-          track={(nowPlaying?.track as Track) ?? null}
-          progressMs={nowPlaying?.progressMs ?? null}
-        />
-      </section>
+      {/* Mobile: always single column */}
+      <div className="md:hidden space-y-6">
+        {nowPlayingSection}
+        <Separator />
+        {searchSection}
+        <Separator />
+        {queueSection}
+      </div>
 
-      <Separator />
+      {/* md+: split two-column layout */}
+      {layoutMode === 'split' && (
+        <div className="hidden md:grid md:grid-cols-2 md:gap-6">
+          <div className="flex flex-col gap-4">
+            {nowPlayingSection}
+            <Separator />
+            {searchSection}
+          </div>
+          <div className="flex flex-col gap-2 border-l pl-6">
+            {queueSection}
+          </div>
+        </div>
+      )}
 
-      {/* Search */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Add to Queue</h2>
-        <SearchBar onSearch={handleSearch} placeholder="Search for a song..." isLoading={searchQuery_.isLoading} />
-        {searchQuery.length > 2 && (
-          <SearchResults
-            tracks={searchResults}
-            isLoading={searchQuery_.isLoading}
-            onQueue={handleQueue}
-            queuingUri={queuingUri}
-          />
-        )}
-      </section>
-
-      <Separator />
-
-      {/* Up Next */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Up Next</h2>
-        <QueueList tracks={queue} />
-      </section>
+      {/* md+: stack single-column layout */}
+      {layoutMode === 'stack' && (
+        <div className="hidden md:block space-y-6">
+          {nowPlayingSection}
+          <Separator />
+          {searchSection}
+          <Separator />
+          {queueSection}
+        </div>
+      )}
     </div>
   )
 }
