@@ -1,0 +1,41 @@
+services:
+  # Hono + tRPC API server (internal only — nginx proxies to it)
+  server:
+    image: smalboeuf1/queued-server:v0.1.0
+    container_name: queued-server
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - queued-network
+
+  # React SPA served by nginx — also proxies /trpc, /events, /auth to server
+  web:
+    image: smalboeuf1/queued-web:v0.1.0
+    container_name: queued-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - queued-network
+
+networks:
+  queued-network:
+    driver: bridge
