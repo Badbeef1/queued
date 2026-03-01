@@ -92,6 +92,10 @@ function SessionPage() {
         isPlaying={nowPlaying?.isPlaying ?? false}
         track={(nowPlaying?.track as Track) ?? null}
         progressMs={nowPlaying?.progressMs ?? null}
+        shuffleState={nowPlaying?.shuffleState ?? false}
+        repeatState={nowPlaying?.repeatState ?? 'off'}
+        volumePercent={nowPlaying?.volumePercent ?? null}
+        sessionId={sessionId}
       />
     </section>
   )

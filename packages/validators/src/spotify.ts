@@ -28,6 +28,9 @@ export const NowPlayingSchema = z.object({
   isPlaying: z.boolean(),
   track: TrackSchema.nullable(),
   progressMs: z.number().nullable(),
+  shuffleState: z.boolean(),
+  repeatState: z.enum(['off', 'track', 'context']),
+  volumePercent: z.number().nullable(),
 })
 
 export type NowPlaying = z.infer<typeof NowPlayingSchema>

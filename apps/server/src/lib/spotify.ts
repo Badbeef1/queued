@@ -97,21 +97,71 @@ export async function queueTrack(sessionId: string, trackUri: string, deviceId?:
 }
 
 export async function getNowPlaying(sessionId: string) {
-  const res = await spotifyFetch(sessionId, '/me/player/currently-playing')
+  const res = await spotifyFetch(sessionId, '/me/player')
   if (res.status === 204 || res.status === 404) {
-    return { isPlaying: false, track: null, progressMs: null }
+    return { isPlaying: false, track: null, progressMs: null, shuffleState: false, repeatState: 'off' as const, volumePercent: null }
   }
   if (!res.ok) throw new Error(`Failed to get now playing: ${res.status}`)
   const data = await res.json() as {
     is_playing: boolean
     item: unknown
     progress_ms: number
+    shuffle_state: boolean
+    repeat_state: 'off' | 'track' | 'context'
+    device: { volume_percent: number | null }
   }
   return {
     isPlaying: data.is_playing,
     track: data.item,
     progressMs: data.progress_ms,
+    shuffleState: data.shuffle_state,
+    repeatState: data.repeat_state,
+    volumePercent: data.device?.volume_percent ?? null,
   }
+}
+
+export async function skipNext(sessionId: string): Promise<void> {
+  const res = await spotifyFetch(sessionId, '/me/player/next', { method: 'POST' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to skip next: ${res.status}`)
+}
+
+export async function skipPrevious(sessionId: string): Promise<void> {
+  const res = await spotifyFetch(sessionId, '/me/player/previous', { method: 'POST' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to skip previous: ${res.status}`)
+}
+
+export async function pausePlayback(sessionId: string): Promise<void> {
+  const res = await spotifyFetch(sessionId, '/me/player/pause', { method: 'PUT' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to pause: ${res.status}`)
+}
+
+export async function resumePlayback(sessionId: string): Promise<void> {
+  const res = await spotifyFetch(sessionId, '/me/player/play', { method: 'PUT' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to resume: ${res.status}`)
+}
+
+export async function setVolume(sessionId: string, volumePercent: number): Promise<void> {
+  const params = new URLSearchParams({ volume_percent: String(Math.round(volumePercent)) })
+  const res = await spotifyFetch(sessionId, `/me/player/volume?${params}`, { method: 'PUT' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to set volume: ${res.status}`)
+}
+
+export async function setShuffle(sessionId: string, state: boolean): Promise<void> {
+  const params = new URLSearchParams({ state: String(state) })
+  const res = await spotifyFetch(sessionId, `/me/player/shuffle?${params}`, { method: 'PUT' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to set shuffle: ${res.status}`)
+}
+
+export async function setRepeat(sessionId: string, state: 'off' | 'track' | 'context'): Promise<void> {
+  const params = new URLSearchParams({ state })
+  const res = await spotifyFetch(sessionId, `/me/player/repeat?${params}`, { method: 'PUT' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to set repeat: ${res.status}`)
+}
+
+export async function seekToPosition(sessionId: string, positionMs: number): Promise<void> {
+  const params = new URLSearchParams({ position_ms: String(Math.round(positionMs)) })
+  const res = await spotifyFetch(sessionId, `/me/player/seek?${params}`, { method: 'PUT' })
+  if (!res.ok && res.status !== 204) throw new Error(`Failed to seek: ${res.status}`)
 }
 
 export async function getQueue(sessionId: string) {

@@ -8,6 +8,14 @@ import {
   getNowPlaying,
   getQueue,
   getDevices,
+  skipNext,
+  skipPrevious,
+  pausePlayback,
+  resumePlayback,
+  setVolume,
+  setShuffle,
+  setRepeat,
+  seekToPosition,
 } from '../../lib/spotify'
 import { broadcastRefresh } from '../../lib/broadcaster'
 
@@ -81,5 +89,109 @@ export const spotifyRouter = router({
       requireSession(input.sessionId)
       updateSession(input.sessionId, { deviceId: input.deviceId })
       return { success: true }
+    }),
+
+  skipNext: publicProcedure
+    .input(z.object({ sessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await skipNext(input.sessionId)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  skipPrevious: publicProcedure
+    .input(z.object({ sessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await skipPrevious(input.sessionId)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  pause: publicProcedure
+    .input(z.object({ sessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await pausePlayback(input.sessionId)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  resume: publicProcedure
+    .input(z.object({ sessionId: z.string() }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await resumePlayback(input.sessionId)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  setVolume: publicProcedure
+    .input(z.object({ sessionId: z.string(), volumePercent: z.number().min(0).max(100) }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await setVolume(input.sessionId, input.volumePercent)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  setShuffle: publicProcedure
+    .input(z.object({ sessionId: z.string(), state: z.boolean() }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await setShuffle(input.sessionId, input.state)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  setRepeat: publicProcedure
+    .input(z.object({ sessionId: z.string(), state: z.enum(['off', 'track', 'context']) }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await setRepeat(input.sessionId, input.state)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
+    }),
+
+  seek: publicProcedure
+    .input(z.object({ sessionId: z.string(), positionMs: z.number().min(0) }))
+    .mutation(async ({ input }) => {
+      requireSession(input.sessionId)
+      try {
+        await seekToPosition(input.sessionId, input.positionMs)
+        void broadcastRefresh(input.sessionId)
+        return { success: true }
+      } catch (err) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: String(err) })
+      }
     }),
 })
