@@ -71,11 +71,13 @@ async function spotifyFetch(
 }
 
 export async function searchTracks(sessionId: string, query: string) {
-  const res = await spotifyFetch(
-    sessionId,
-    `/search?q=${encodeURIComponent(query)}&type=track&limit=20`,
-  )
-  if (!res.ok) throw new Error(`Spotify search failed: ${res.status}`)
+  const params = new URLSearchParams({ q: query, type: 'track', limit: '10' })
+  const res = await spotifyFetch(sessionId, `/search?${params}`)
+  if (!res.ok) {
+    const body = await res.text()
+    console.error(`Spotify search failed: ${res.status}`, body)
+    throw new Error(`Spotify search failed: ${res.status} — ${body}`)
+  }
   const data = await res.json() as { tracks: { items: unknown[] } }
   return data.tracks.items
 }

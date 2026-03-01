@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useCallback } from 'react'
 import { Settings } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
@@ -9,6 +9,7 @@ import { NowPlaying } from '@/components/NowPlaying'
 import { QueueList } from '@/components/QueueList'
 import { SearchBar } from '@/components/SearchBar'
 import { SearchResults } from '@/components/SearchResults'
+import { useSessionStream } from '@/lib/useSessionStream'
 import type { Track } from '@queued/validators'
 
 export const Route = createFileRoute('/session/$sessionId/')({
@@ -22,19 +23,17 @@ function SessionPage() {
 
   const sessionQuery = trpc.session.get.useQuery({ id: sessionId })
 
-  const nowPlayingQuery = trpc.spotify.nowPlaying.useQuery(
-    { sessionId },
-    { refetchInterval: 3_000 },
-  )
-
-  const queueQuery = trpc.spotify.getQueue.useQuery(
-    { sessionId },
-    { refetchInterval: 5_000 },
-  )
+  const { nowPlaying, queue, addOptimisticTrack } = useSessionStream(sessionId)
 
   const searchQuery_ = trpc.spotify.search.useQuery(
     { sessionId, query: searchQuery },
-    { enabled: searchQuery.length > 2 },
+    {
+      enabled: searchQuery.length > 2,
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      staleTime: 30_000,
+    },
   )
 
   const queueMutation = trpc.spotify.queue.useMutation({
@@ -47,7 +46,6 @@ function SessionPage() {
         title: 'Added to queue',
         description: track ? `${track.name} by ${track.artists[0]?.name}` : undefined,
       })
-      queueQuery.refetch()
     },
     onError: (err) => {
       setQueuingUri(undefined)
@@ -58,9 +56,10 @@ function SessionPage() {
   const handleQueue = useCallback(
     (track: Track) => {
       setQueuingUri(track.uri)
+      addOptimisticTrack(track)
       queueMutation.mutate({ sessionId, trackUri: track.uri })
     },
-    [sessionId, queueMutation],
+    [sessionId, queueMutation, addOptimisticTrack],
   )
 
   const handleSearch = useCallback((q: string) => {
@@ -83,8 +82,6 @@ function SessionPage() {
   }
 
   const session = sessionQuery.data
-  const nowPlaying = nowPlayingQuery.data
-  const queueData = queueQuery.data as { queue: Track[] } | undefined
   const searchResults = (searchQuery_.data ?? []) as Track[]
 
   return (
@@ -133,7 +130,7 @@ function SessionPage() {
       {/* Up Next */}
       <section className="space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Up Next</h2>
-        <QueueList tracks={queueData?.queue ?? []} />
+        <QueueList tracks={queue} />
       </section>
     </div>
   )

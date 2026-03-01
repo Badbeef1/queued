@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Music2 } from 'lucide-react'
 import { formatDuration } from '@/lib/utils'
 import type { Track } from '@queued/validators'
@@ -9,6 +10,23 @@ interface NowPlayingProps {
 }
 
 export function NowPlaying({ isPlaying, track, progressMs }: NowPlayingProps) {
+  const [localProgressMs, setLocalProgressMs] = useState(progressMs ?? 0)
+
+  // Sync with server-pushed value
+  useEffect(() => {
+    setLocalProgressMs(progressMs ?? 0)
+  }, [progressMs])
+
+  // Animate locally when playing
+  useEffect(() => {
+    if (!isPlaying || !track) return
+    const duration = track.duration_ms
+    const id = setInterval(() => {
+      setLocalProgressMs((p) => Math.min(p + 1000, duration))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [isPlaying, track?.uri, track?.duration_ms])
+
   if (!track) {
     return (
       <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
@@ -24,7 +42,7 @@ export function NowPlaying({ isPlaying, track, progressMs }: NowPlayingProps) {
   }
 
   const albumArt = track.album.images[0]?.url
-  const progressPct = progressMs != null ? (progressMs / track.duration_ms) * 100 : 0
+  const progressPct = (localProgressMs / track.duration_ms) * 100
   const artists = track.artists.map((a) => a.name).join(', ')
 
   return (
@@ -56,7 +74,7 @@ export function NowPlaying({ isPlaying, track, progressMs }: NowPlayingProps) {
           />
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{formatDuration(progressMs ?? 0)}</span>
+          <span>{formatDuration(localProgressMs)}</span>
           <span>{formatDuration(track.duration_ms)}</span>
         </div>
       </div>
