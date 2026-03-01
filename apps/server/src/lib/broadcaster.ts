@@ -12,6 +12,7 @@ interface SessionBroadcaster {
   lastState: SessionState | null
   lastTrackUri: string | null
   timer: ReturnType<typeof setTimeout> | null
+  inFlight: boolean
 }
 
 const broadcasters = new Map<string, SessionBroadcaster>()
@@ -57,6 +58,8 @@ async function pollAndBroadcast(sessionId: string): Promise<void> {
   const broadcaster = broadcasters.get(sessionId)
   if (!broadcaster) return
 
+  if (broadcaster.inFlight) return
+
   if (broadcaster.clients.size === 0) {
     stopBroadcaster(sessionId)
     return
@@ -67,6 +70,7 @@ async function pollAndBroadcast(sessionId: string): Promise<void> {
     return
   }
 
+  broadcaster.inFlight = true
   try {
     const rawNowPlaying = await getNowPlaying(sessionId)
     const nowPlaying = NowPlayingSchema.parse(rawNowPlaying)
@@ -91,6 +95,9 @@ async function pollAndBroadcast(sessionId: string): Promise<void> {
     sendState(broadcaster, state)
   } catch (err) {
     console.error(`[broadcaster] Poll error for session ${sessionId}:`, err)
+  } finally {
+    const b = broadcasters.get(sessionId)
+    if (b) b.inFlight = false
   }
 
   // Schedule next poll (re-read broadcaster in case sendState removed dead clients)
@@ -113,7 +120,7 @@ export function registerClient(
   const isFirst = !broadcaster || broadcaster.clients.size === 0
 
   if (!broadcaster) {
-    broadcaster = { clients: new Set(), lastState: null, lastTrackUri: null, timer: null }
+    broadcaster = { clients: new Set(), lastState: null, lastTrackUri: null, timer: null, inFlight: false }
     broadcasters.set(sessionId, broadcaster)
   }
 
@@ -148,6 +155,11 @@ export async function broadcastRefresh(sessionId: string): Promise<void> {
   if (broadcaster.timer) {
     clearTimeout(broadcaster.timer)
     broadcaster.timer = null
+  }
+  // If a poll is already in-flight, schedule an immediate follow-up once it lands
+  if (broadcaster.inFlight) {
+    broadcaster.timer = setTimeout(() => void pollAndBroadcast(sessionId), 0)
+    return
   }
   await pollAndBroadcast(sessionId)
 }

@@ -25,7 +25,7 @@ export function NowPlaying({ isPlaying, track, progressMs }: NowPlayingProps) {
       setLocalProgressMs((p) => Math.min(p + 1000, duration))
     }, 1000)
     return () => clearInterval(id)
-  }, [isPlaying, track?.uri])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPlaying, track?.uri, track?.duration_ms])
 
   if (!track) {
     return (
