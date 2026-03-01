@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, X, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { useDebounce } from '@/lib/useDebounce'
 
 interface SearchBarProps {
   onSearch: (query: string) => void
@@ -10,21 +11,12 @@ interface SearchBarProps {
 
 export function SearchBar({ onSearch, placeholder = 'Search songs...', isLoading = false }: SearchBarProps) {
   const [value, setValue] = useState('')
-  const [isDebouncing, setIsDebouncing] = useState(false)
+  const debouncedValue = useDebounce(value, 250)
+  const isDebouncing = value.length > 2 && value !== debouncedValue
 
   useEffect(() => {
-    if (value.length <= 2) {
-      setIsDebouncing(false)
-      onSearch(value)
-      return
-    }
-    setIsDebouncing(true)
-    const id = setTimeout(() => {
-      setIsDebouncing(false)
-      onSearch(value)
-    }, 250)
-    return () => clearTimeout(id)
-  }, [value]) // onSearch is stable (useCallback in parent)
+    onSearch(debouncedValue.length > 2 ? debouncedValue : '')
+  }, [debouncedValue, onSearch])
 
   const handleClear = () => {
     setValue('')
